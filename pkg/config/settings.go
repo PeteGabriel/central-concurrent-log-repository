@@ -7,8 +7,9 @@ import (
 
 //Settings represent the environment configuration of this application.
 type Settings struct {
-	Host string `mapstructure:"HOST"`
-	Port string `mapstructure:"PORT"`
+	Host    string `mapstructure:"HOST"`
+	Port    string `mapstructure:"PORT"`
+	Clients string `mapstructure:"CLIENTS"`
 }
 
 //New instance of Settings type.
