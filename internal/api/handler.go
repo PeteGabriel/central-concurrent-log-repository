@@ -18,7 +18,7 @@ const (
 //HandleNewClient receive a new connection to a client and a channel
 //where it can check if client can connect to the application or if
 //connection need to be released due to overflow of clients.
-func HandleNewClient(c net.Conn, sem chan int, st *config.Settings) {
+func HandleNewClient(c net.Conn, sem chan int, st *config.Settings, end chan bool) {
 
 	amount, err := strconv.Atoi(st.Clients)
 	if err != nil {
@@ -44,6 +44,7 @@ func HandleNewClient(c net.Conn, sem chan int, st *config.Settings) {
 			c.Write([]byte(TerminateCmdMsg))
 			c.Close()
 			<-sem
+			end <- true
 			return
 		}
 

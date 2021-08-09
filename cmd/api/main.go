@@ -23,6 +23,7 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
+		fmt.Println("All connections closed")
 	}(l)
 
 	amnt, err := strconv.Atoi(s.Clients)
@@ -33,13 +34,20 @@ func main() {
 	//use this buffered channel to control how many
 	//clients can connect to us simultaneously
 	sem := make(chan int, amnt)
+	//use this channel to communicate between the goroutine responsible for each client and the main thread.
+	//Whenever a client sends the TERMINATE cmd, this channel "allows" the program to finish.
+	terminator := make(chan bool)
 
-	for {
-		c, err := l.Accept()
-		if err != nil {
-			fmt.Println(err)
-			return
+	go func() {
+		for {
+			c, err := l.Accept()
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+			go handlers.HandleNewClient(c, sem, s, terminator)
 		}
-		go handlers.HandleNewClient(c, sem, s)
-	}
+	}()
+
+	<-terminator
 }
