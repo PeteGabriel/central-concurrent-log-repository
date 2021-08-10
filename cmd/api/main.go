@@ -31,11 +31,15 @@ func main() {
 		log.Println("Accepting 5 clients")
 		amnt = 5 // default value of accepted clients
 	}
+
 	//use this buffered channel to control how many
 	//clients can connect to us simultaneously
 	sem := make(chan int, amnt)
-	//use this channel to communicate between the goroutine responsible for each client and the main thread.
-	//Whenever a client sends the TERMINATE cmd, this channel "allows" the program to finish.
+
+	//use this channel to communicate between the goroutine
+	//responsible for each client and the main thread.
+	//Whenever a client sends the TERMINATE cmd,
+	//this channel "allows" the program to finish.
 	terminator := make(chan bool)
 
 	go func() {

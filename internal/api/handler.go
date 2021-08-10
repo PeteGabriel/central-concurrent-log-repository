@@ -5,14 +5,12 @@ import (
 	"fmt"
 	"net"
 	"petegabriel/central-concurrent-log/pkg/config"
+	"petegabriel/central-concurrent-log/pkg/services"
 	"strconv"
 	"strings"
 )
 
-const (
-	TerminateCmd = "TERMINATE"
-	TerminateCmdMsg = "Terminating process.\nClosing connection.\n"
-)
+const terminateCmd = "TERMINATE"
 
 
 //HandleNewClient receive a new connection to a client and a channel
@@ -25,7 +23,7 @@ func HandleNewClient(c net.Conn, sem chan int, st *config.Settings, end chan boo
 		panic(err)
 	}
 	if len(sem) == amount {
-		c.Write([]byte("Cannot accept more clients.."))
+		services.SendMsg(c, "Cannot accept more clients..")
 		c.Close()
 		return
 	}
@@ -40,15 +38,14 @@ func HandleNewClient(c net.Conn, sem chan int, st *config.Settings, end chan boo
 			return
 		}
 		//handle terminate cmd
-		if strings.TrimSpace(cmd) == TerminateCmd {
-			c.Write([]byte(TerminateCmdMsg))
-			c.Close()
+		if strings.TrimSpace(cmd) == terminateCmd {
+			services.SendTerminatorConsoleMsg(c)
 			<-sem
 			end <- true
 			return
 		}
 
-		c.Write([]byte("Hello from TCP server\n"))
+		services.SendMsg(c, "Hello from TCP server\n")
 	}
 
 
