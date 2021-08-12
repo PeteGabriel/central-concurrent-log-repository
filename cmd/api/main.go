@@ -49,7 +49,26 @@ func main() {
 				return
 			}
 			msgr := services.New(c)
-			go handlers.HandleNewClient(msgr, sem, s, terminator)
+
+			amount, err := strconv.Atoi(s.Clients)
+			if err != nil {
+				panic(err)
+			}
+			if len(sem) == amount {
+				err := msgr.Send("Cannot accept more clients..")
+				if err != nil {
+					log.Error().Err(err).Msg("error sending message to client")
+				}
+				err = msgr.SendAndTerminate()
+				if err != nil {
+					log.Error().Err(err).Msg("error sending 'terminate' message to client")
+				}
+				return
+			}
+
+			rptr := services.NewReporter(s)
+
+			go handlers.HandleNewClient(msgr, rptr, sem, terminator)
 		}
 	}()
 

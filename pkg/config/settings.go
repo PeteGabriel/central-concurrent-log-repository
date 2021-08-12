@@ -10,6 +10,7 @@ type Settings struct {
 	Host    string `mapstructure:"HOST"`
 	Port    string `mapstructure:"PORT"`
 	Clients string `mapstructure:"CLIENTS"`
+	FileName string `mapstructure:"FILENAME"`
 }
 
 //New instance of Settings type.

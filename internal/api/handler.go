@@ -1,10 +1,8 @@
 package handlers
 
 import (
-	"petegabriel/central-concurrent-log/pkg/config"
 	"petegabriel/central-concurrent-log/pkg/services"
 	"regexp"
-	"strconv"
 	"github.com/rs/zerolog/log"
 )
 
@@ -18,24 +16,8 @@ const (
 //HandleNewClient receive a new connection to a client and a channel
 //where it can check if client can connect to the application or if
 //connection need to be released due to overflow of clients.
-func HandleNewClient(messenger services.IMessenger, sem chan int, st *config.Settings, end chan bool) {
-
-	amount, err := strconv.Atoi(st.Clients)
-	if err != nil {
-		panic(err)
-	}
-	if len(sem) == amount {
-		err := messenger.Send("Cannot accept more clients..")
-		if err != nil {
-			log.Error().Err(err).Msg("error sending message to client")
-		}
-		err = messenger.SendAndTerminate()
-		if err != nil {
-			log.Error().Err(err).Msg("error sending 'terminate' message to client")
-		}
-		return
-	}
-	sem <- 1
+func HandleNewClient(messenger services.IMessenger, reporter services.IReporter, sem chan int,  end chan bool) {
+	sem <- 1 //let other know a new client is in
 
 	for {
 		//accepting input
@@ -73,9 +55,10 @@ func HandleNewClient(messenger services.IMessenger, sem chan int, st *config.Set
 			return
 		}
 
+		/*
 		//handle client input
 		_, err = strconv.Atoi(cmd)
-		if err != nil {
+		if err != nil { //cannot convert into number
 			log.Error().Err(err).Msg("could not convert input to number")
 			if err := messenger.Send("--> Input not valid <-"); err != nil {
 				log.Error().Err(err).Msg("Error communicating with client.")
@@ -86,10 +69,15 @@ func HandleNewClient(messenger services.IMessenger, sem chan int, st *config.Set
 			<-sem //free space for another client
 			return
 		}
+		*/
+
 
 		if err := messenger.Send("!! Good input !!"); err != nil {
 			log.Error().Err(err).Msg("Error communicating with client.")
 		}
+
+		reporter.Append(cmd)
+
 
 	}
 }

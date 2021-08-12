@@ -21,7 +21,7 @@ type Messenger struct {
 }
 
 //New instance of Messenger
-func New(c net.Conn) *Messenger {
+func New(c net.Conn) IMessenger {
 	return &Messenger{
 		c: c,
 	}
