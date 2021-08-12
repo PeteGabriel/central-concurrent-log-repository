@@ -6,6 +6,7 @@ import (
 	"net"
 	handlers "petegabriel/central-concurrent-log/internal/api"
 	"petegabriel/central-concurrent-log/pkg/config"
+	"petegabriel/central-concurrent-log/pkg/services"
 	"strconv"
 )
 
@@ -45,7 +46,8 @@ func main() {
 				fmt.Println(err)
 				return
 			}
-			go handlers.HandleNewClient(c, sem, s, terminator)
+			msgr := services.New(c)
+			go handlers.HandleNewClient(msgr, sem, s, terminator)
 		}
 	}()
 
