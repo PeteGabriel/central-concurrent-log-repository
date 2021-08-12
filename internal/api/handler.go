@@ -1,14 +1,15 @@
 package handlers
 
 import (
-	"fmt"
 	"petegabriel/central-concurrent-log/pkg/config"
 	"petegabriel/central-concurrent-log/pkg/services"
+	"regexp"
 	"strconv"
+	"github.com/rs/zerolog/log"
 )
 
 const (
-	AmountOfDigits = 9
+	DigitsPattern = `^\d{9}$`
 	TerminateCmd = "TERMINATE"
 )
 
@@ -26,11 +27,11 @@ func HandleNewClient(messenger services.IMessenger, sem chan int, st *config.Set
 	if len(sem) == amount {
 		err := messenger.Send("Cannot accept more clients..")
 		if err != nil {
-			//todo add logs
+			log.Error().Err(err).Msg("error sending message to client")
 		}
 		err = messenger.SendAndTerminate()
 		if err != nil {
-			//todo add logs
+			log.Error().Err(err).Msg("error sending 'terminate' message to client")
 		}
 		return
 	}
@@ -40,56 +41,56 @@ func HandleNewClient(messenger services.IMessenger, sem chan int, st *config.Set
 		//accepting input
 		cmd, err := messenger.Read()
 		if err != nil {
-			fmt.Println("Error communicating with client. Closing connection.")
-			err := messenger.SendAndTerminate()
-			if err != nil {
-				<-sem
-				return
-			}
+			log.Error().Err(err).Msg("Error communicating with client. Closing connection.")
+			_ = messenger.SendAndTerminate()
 			<-sem
 			return
 		}
 
+		//log input for record
+		log.Info().Msg(cmd)
+
 		//handle terminate cmd
 		if cmd == TerminateCmd {
-			terminateProcess(messenger, sem, end)
+			if err := messenger.SendAndTerminate(); err != nil {
+				log.Error().Err(err).Msg("Error sending 'terminate message to client.")
+			}
+			//<-sem
+			end <- true
 			return
 		}
 
 		//check 9 digit condition
-		if len(cmd) != AmountOfDigits {
-			err := messenger.Send("--> Input not valid. <-\n")
+		if match, _ := regexp.MatchString(DigitsPattern, cmd); !match {
+			err := messenger.Send("--> Input length not valid. <-")
 			if err != nil {
-				//todo add logs
+				log.Error().Err(err).Msg("Error communicating with client.")
 			}
-			terminateProcess(messenger, sem, end)
+			if err := messenger.CloseSession(); err != nil {
+				log.Error().Err(err).Msg("")
+			}
+			<-sem //free space for another client
 			return
 		}
 
 		//handle client input
 		_, err = strconv.Atoi(cmd)
 		if err != nil {
-			err := messenger.Send("--> Input not valid <-\n")
-			if err != nil {
-				//todo add logs
+			log.Error().Err(err).Msg("could not convert input to number")
+			if err := messenger.Send("--> Input not valid <-"); err != nil {
+				log.Error().Err(err).Msg("Error communicating with client.")
 			}
-			fmt.Println(err)
-		}else {
-			fmt.Println("Input received: " + cmd)
-			err := messenger.Send("!! Good input !!\n")
-			if err != nil {
-				//todo add logs
+			if err := messenger.CloseSession(); err != nil {
+				log.Error().Err(err).Msg("")
 			}
+			<-sem //free space for another client
+			return
 		}
+
+		if err := messenger.Send("!! Good input !!"); err != nil {
+			log.Error().Err(err).Msg("Error communicating with client.")
+		}
+
 	}
 }
 
-func terminateProcess(messenger services.IMessenger, sem chan int, end chan bool) {
-	err := messenger.SendAndTerminate()
-	if err != nil {
-		//todo add logs
-		return
-	}
-	<-sem
-	end <- true
-}

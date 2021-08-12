@@ -1,8 +1,8 @@
 package main
 
 import (
-	"fmt"
-	"log"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"net"
 	handlers "petegabriel/central-concurrent-log/internal/api"
 	"petegabriel/central-concurrent-log/pkg/config"
@@ -11,25 +11,27 @@ import (
 )
 
 func main() {
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
+
 	s := config.New()
 	l, err := net.Listen("tcp", s.Host+":"+s.Port)
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Println(l.Addr().String())
+	log.Info().Msg(l.Addr().String())
 
 	defer func(l net.Listener) {
 		err := l.Close()
 		if err != nil {
 			panic(err)
 		}
-		fmt.Println("All connections closed")
+		log.Info().Msg("All connections closed")
 	}(l)
 
 	amnt, err := strconv.Atoi(s.Clients)
 	if err != nil {
-		log.Println("Accepting 5 clients")
+		log.Info().Msg("Accepting 5 clients")
 		amnt = 5 // default value of accepted clients
 	}
 	//use this buffered channel to control how many
@@ -43,7 +45,7 @@ func main() {
 		for {
 			c, err := l.Accept()
 			if err != nil {
-				fmt.Println(err)
+				log.Error().Err(err).Msg("error accepting client connection")
 				return
 			}
 			msgr := services.New(c)

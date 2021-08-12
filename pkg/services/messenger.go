@@ -6,13 +6,14 @@ import (
 	"strings"
 )
 
-const terminateCmdMsg = "Terminating process.\nClosing connection.\n"
+const terminateCmdMsg = "Terminating process...Closing connection...\n"
 
 //IMessenger specifies the operations
 type IMessenger interface {
 	SendAndTerminate() error
 	Send(msg string) error
 	Read() (string, error)
+	CloseSession() error
 }
 
 type Messenger struct {
@@ -30,25 +31,17 @@ func New(c net.Conn) *Messenger {
 //closes the connection.
 func (m *Messenger) SendAndTerminate() error {
 	if _, err := m.sendMsg(terminateCmdMsg); err != nil {
-		//TODO add logs
 		return err
 	}
 
-	if err := m.c.Close(); err != nil {
-		//TODO add logs
-		return err
-	}
-
-	return nil
+	return m.CloseSession()
 }
 
 //Send a specific message.
 func (m *Messenger) Send(msg string) error {
 	if _, err := m.sendMsg(msg); err != nil {
-		//TODO add logs
 		return err
 	}
-
 	return nil
 }
 
@@ -56,16 +49,21 @@ func (m *Messenger) Send(msg string) error {
 func (m *Messenger) Read() (string, error) {
 	cmd, err := bufio.NewReader(m.c).ReadString('\n')
 	if err != nil {
-		//TODO add logs
 		return "", err
 	}
 
 	return strings.TrimSpace(cmd), nil
 }
 
+func (m *Messenger) CloseSession() error {
+	if err := m.c.Close(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (m *Messenger) sendMsg(msg string) (n int, err error) {
-	if _, err := m.c.Write([]byte(msg)); err != nil {
-		//TODO add logs
+	if _, err := m.c.Write([]byte(msg + "\n")); err != nil {
 		return -1, err
 	}
 
