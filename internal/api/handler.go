@@ -74,11 +74,9 @@ func HandleNewClient(messenger services.IMessenger, reporter services.IReporter,
 
 		if err := messenger.Send("!! Good input !!"); err != nil {
 			log.Error().Err(err).Msg("Error communicating with client.")
+		} else {
+		  reporter.Append(cmd)
 		}
-
-		reporter.Append(cmd)
-
-
 	}
 }
 
