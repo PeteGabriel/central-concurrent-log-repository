@@ -8,6 +8,7 @@ import (
 	"petegabriel/central-concurrent-log/pkg/config"
 )
 
+//IReporter specifies the writing operations
 type IReporter interface {
 	Append(n string)
 }
@@ -17,13 +18,13 @@ type Reporter struct {
 	writer *bufio.Writer
 }
 
+//NewReporter creates a new instance of Reporter
 func NewReporter(st *config.Settings) IReporter{
 	dirname, err := os.Getwd()
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Printf("Current directory: %v\n", dirname)
 	f, err := os.Create(path.Join(dirname, st.FileName))
 	if err != nil {
 		panic(err)
@@ -35,7 +36,12 @@ func NewReporter(st *config.Settings) IReporter{
 	}
 }
 
+//Append new content to report file.
 func (r *Reporter) Append(n string){
-	r.writer.WriteString(n + "\n")
-	r.writer.Flush()
+        if _, err := r.writer.WriteString(n + "\n"); err != nil {
+		return
+	}
+	if err := r.writer.Flush(); err != nil {
+		return
+	}
 }
