@@ -23,8 +23,13 @@ func setupTest() func() {
 	}
 }
 
+func eraseTestFile(){
+	dirname, _ := os.Getwd()
+		_ = os.Remove(path.Join(dirname, testFileName))
+}
+
 func TestNewReporter(t *testing.T) {
-	defer setupTest()()
+	defer eraseTestFile()
 
 	is := is2.New(t)
 	cfg := &config.Settings{

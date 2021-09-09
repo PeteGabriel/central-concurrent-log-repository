@@ -1,13 +1,14 @@
 package main
 
 import (
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 	"net"
 	handlers "petegabriel/central-concurrent-log/internal/api"
 	"petegabriel/central-concurrent-log/pkg/config"
 	"petegabriel/central-concurrent-log/pkg/services"
 	"strconv"
+
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
 func main() {
@@ -41,36 +42,41 @@ func main() {
 	//Whenever a client sends the TERMINATE cmd, this channel "allows" the program to finish.
 	terminator := make(chan bool)
 
-	go func() {
-		for {
-			c, err := l.Accept()
-			if err != nil {
-				log.Error().Err(err).Msg("error accepting client connection")
-				return
-			}
-			msgr := services.New(c)
-
-			amount, err := strconv.Atoi(s.Clients)
-			if err != nil {
-				panic(err)
-			}
-			if len(sem) == amount {
-				err := msgr.Send("Cannot accept more clients..")
-				if err != nil {
-					log.Error().Err(err).Msg("error sending message to client")
-				}
-				err = msgr.SendAndTerminate()
-				if err != nil {
-					log.Error().Err(err).Msg("error sending 'terminate' message to client")
-				}
-				return
-			}
-
-			rptr := services.NewReporter(s)
-
-			go handlers.HandleNewClient(msgr, rptr, sem, terminator)
-		}
-	}()
+	go startClientHandler(l, s, sem, terminator)
 
 	<-terminator
+}
+
+func startClientHandler(listener net.Listener, s *config.Settings, sem chan int, terminator chan bool) {
+	for {
+		c, err := l.Accept()
+		if err != nil {
+			log.Error().Err(err).Msg("error accepting client connection")
+			return
+		}
+		msgr := services.New(c)
+
+		amount, err := strconv.Atoi(s.Clients)
+		if err != nil {
+			panic(err)
+		}
+		if len(sem) == amount {
+			
+			err := msgr.Send("Cannot accept more clients..")
+			if err != nil {
+				log.Error().Err(err).Msg("error sending message to client")
+			}
+
+			err = msgr.SendAndTerminate()
+			if err != nil {
+				log.Error().Err(err).Msg("error sending 'terminate' message to client")
+			}
+			
+			return
+		}
+
+		rptr := services.NewReporter(s)
+
+		go handlers.HandleNewClient(msgr, rptr, sem, terminator)
+	}
 }
