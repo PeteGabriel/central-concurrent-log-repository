@@ -2,7 +2,6 @@ package services
 
 import (
 	"bufio"
-	"fmt"
 	"os"
 	"path"
 	"petegabriel/central-concurrent-log/pkg/config"
