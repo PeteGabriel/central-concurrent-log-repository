@@ -1,17 +1,15 @@
 package handlers
 
 import (
+	"github.com/rs/zerolog/log"
 	"petegabriel/central-concurrent-log/pkg/services"
 	"regexp"
-	"github.com/rs/zerolog/log"
 )
 
 const (
-	DigitsPattern = `^\d{9}$`
-	TerminateCmd = "TERMINATE"
+	digitsRegexPattern = `^\d{9}$`
+	terminateCmd       = "TERMINATE"
 )
-
-
 
 //HandleNewClient receive a new connection to a client and a channel
 //where it can check if client can connect to the application or if
@@ -33,7 +31,7 @@ func HandleNewClient(messenger services.IMessenger, reporter services.IReporter,
 		log.Info().Msg(cmd)
 
 		//handle terminate cmd
-		if cmd == TerminateCmd {
+		if cmd == terminateCmd {
 			if err := messenger.SendAndTerminate(); err != nil {
 				log.Error().Err(err).Msg("Error sending 'terminate message to client.")
 			}
@@ -43,7 +41,7 @@ func HandleNewClient(messenger services.IMessenger, reporter services.IReporter,
 		}
 
 		//check 9 digit condition
-		if match, _ := regexp.MatchString(DigitsPattern, cmd); !match {
+		if match, _ := regexp.MatchString(digitsRegexPattern, cmd); !match {
 			err := messenger.Send("--> Input length not valid. <-")
 			if err != nil {
 				log.Error().Err(err).Msg("Error communicating with client.")
@@ -54,23 +52,6 @@ func HandleNewClient(messenger services.IMessenger, reporter services.IReporter,
 			<-sem //free space for another client
 			return
 		}
-
-		/*
-		//handle client input
-		_, err = strconv.Atoi(cmd)
-		if err != nil { //cannot convert into number
-			log.Error().Err(err).Msg("could not convert input to number")
-			if err := messenger.Send("--> Input not valid <-"); err != nil {
-				log.Error().Err(err).Msg("Error communicating with client.")
-			}
-			if err := messenger.CloseSession(); err != nil {
-				log.Error().Err(err).Msg("")
-			}
-			<-sem //free space for another client
-			return
-		}
-		*/
-
 
 		if err := messenger.Send("!! Good input !!"); err != nil {
 			log.Error().Err(err).Msg("Error communicating with client.")

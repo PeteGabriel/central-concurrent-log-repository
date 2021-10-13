@@ -40,7 +40,36 @@ func TestNewReporter(t *testing.T) {
 	}
 	rep := NewReporter(cfg)
 	//add some content via the reporter
-	rep.Append("this is a test")
+	err := rep.Append("this is a test")
+	is.NoErr(err)
+
+	//check if content was properly saved.
+	dirname, _ := os.Getwd()
+	raw, err := os.ReadFile(path.Join(dirname, testFileName))
+	data := strings.TrimSpace(string(raw))
+	is.NoErr(err)
+
+	is.True(data == "this is a test")
+}
+
+func TestNewReporter_WithDuplicatedValue(t *testing.T) {
+	defer eraseTestFile()
+
+	is := is2.New(t)
+	cfg := &config.Settings{
+		Host:     "localhost",
+		Port:     "1234",
+		Clients:  "5",
+		FileName: testFileName,
+	}
+	rep := NewReporter(cfg)
+
+	//add some content via the reporter
+	err := rep.Append("this is a test")
+	is.NoErr(err)
+
+	err = rep.Append("this is a test")
+	is.True(err != nil) //duplication error
 
 	//check if content was properly saved.
 	dirname, _ := os.Getwd()

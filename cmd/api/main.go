@@ -47,7 +47,7 @@ func main() {
 	<-terminator
 }
 
-func startClientHandler(listener net.Listener, s *config.Settings, sem chan int, terminator chan bool) {
+func startClientHandler(l net.Listener, s *config.Settings, sem chan int, terminator chan bool) {
 	for {
 		c, err := l.Accept()
 		if err != nil {
