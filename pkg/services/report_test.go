@@ -23,9 +23,9 @@ func setupTest() func() {
 	}
 }
 
-func eraseTestFile(){
+func eraseTestFile() {
 	dirname, _ := os.Getwd()
-		_ = os.Remove(path.Join(dirname, testFileName))
+	_ = os.Remove(path.Join(dirname, testFileName))
 }
 
 func TestNewReporter(t *testing.T) {
@@ -70,6 +70,7 @@ func TestNewReporter_WithDuplicatedValue(t *testing.T) {
 
 	err = rep.Append("this is a test")
 	is.True(err != nil) //duplication error
+	is.Equal(err.Error(), "cannot append duplicate value")
 
 	//check if content was properly saved.
 	dirname, _ := os.Getwd()

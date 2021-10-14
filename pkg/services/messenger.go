@@ -1,7 +1,7 @@
 package services
 
 import (
-	"bufio"
+	"io/ioutil"
 	"net"
 	"strings"
 )
@@ -47,12 +47,12 @@ func (m *Messenger) Send(msg string) error {
 
 //Read a message. Blocking operation.
 func (m *Messenger) Read() (string, error) {
-	cmd, err := bufio.NewReader(m.c).ReadString('\n')
+	cmd, err := ioutil.ReadAll(m.c)
 	if err != nil {
 		return "", err
 	}
 
-	return strings.TrimSpace(cmd), nil
+	return strings.TrimSpace(string(cmd)), nil
 }
 
 func (m *Messenger) CloseSession() error {
